@@ -1,13 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Chatbot endpoint
+  // Chatbot endpoint using Groq (free AI alternative)
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, conversationHistory = [] } = req.body;
@@ -29,17 +28,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5",
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.1-8b-instant",
         messages: messages,
-        max_completion_tokens: 500,
+        max_tokens: 500,
+        temperature: 0.7,
       });
 
       const reply = completion.choices[0].message.content;
 
       res.json({ reply });
     } catch (error: any) {
-      console.error("OpenAI API error:", error);
+      console.error("Groq API error:", error);
       res.status(500).json({ error: "Failed to get response from AI" });
     }
   });
